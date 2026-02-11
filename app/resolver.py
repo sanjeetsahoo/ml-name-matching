@@ -48,6 +48,25 @@ def resolve(bank_name: str, pan_name: str, *, entity_type: str = "unknown", ml_s
         "pan_tokens": pan_toks,
     }
 
+    # Require enough signal to avoid auto-accept on tiny names (even if they match).
+    if min(len(bank_toks), len(pan_toks)) < settings.min_meaningful_tokens:
+        token_set_ratio = fuzz.token_set_ratio(bank_norm, pan_norm) if bank_norm and pan_norm else 0
+        wratio = fuzz.WRatio(bank_norm, pan_norm) if bank_norm and pan_norm else 0
+        features.update({"token_set_ratio": token_set_ratio, "wratio": wratio, "ml_score": ml_score})
+
+        reasons.append("insufficient_tokens")
+        if bank_norm == pan_norm and bank_norm:
+            reasons.append("exact_normalized_match")
+
+        return ResolveResult(
+            decision="send_to_ops",
+            confidence=max((ml_score or 0.0), wratio / 100.0, token_set_ratio / 100.0),
+            reasons=reasons,
+            bank_norm=bank_norm,
+            pan_norm=pan_norm,
+            features=features,
+        )
+
     # Fast path
     if bank_norm == pan_norm and bank_norm:
         return ResolveResult(
@@ -80,18 +99,6 @@ def resolve(bank_name: str, pan_name: str, *, entity_type: str = "unknown", ml_s
             decision="auto_reject",
             confidence=float(ml_score),
             reasons=["ml_score_low_override"],
-            bank_norm=bank_norm,
-            pan_norm=pan_norm,
-            features=features,
-        )
-
-    # Require enough signal to avoid auto-accept on tiny names.
-    if min(len(bank_toks), len(pan_toks)) < settings.min_meaningful_tokens:
-        reasons.append("insufficient_tokens")
-        return ResolveResult(
-            decision="send_to_ops",
-            confidence=max((ml_score or 0.0), wratio / 100.0, token_set_ratio / 100.0),
-            reasons=reasons,
             bank_norm=bank_norm,
             pan_norm=pan_norm,
             features=features,
