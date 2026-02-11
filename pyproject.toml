@@ -1,0 +1,23 @@
+[project]
+name = "ml-name-matching"
+version = "0.1.0"
+description = "Partial-accept triage service to reduce ops tickets"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi",
+  "pydantic",
+  "rapidfuzz",
+  "uvicorn",
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx",
+  "pytest",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
