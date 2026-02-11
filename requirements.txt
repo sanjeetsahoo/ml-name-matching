@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+rapidfuzz
+pydantic
+pytest
+
