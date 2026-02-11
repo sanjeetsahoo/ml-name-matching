@@ -100,46 +100,51 @@ def _build_service() -> PartialAcceptReviewService:
     )
 
 
-app = FastAPI(
-    title="Partial Accept Ops Reducer",
-    version="0.1.0",
-    description="Second-stage review service that auto-resolves low-risk partial accepts.",
-)
-_review_service = _build_service()
-
-
-@app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
-
-
-@app.post("/v1/partial-accepts/review", response_model=ReviewResponse)
-def review_partial_accept(request: ReviewRequest) -> ReviewResponse:
-    outcome = _review_service.review(
-        bank_name=request.bank_name,
-        pan_name=request.pan_name,
-        model_score=request.model_score,
+def create_app(review_service: PartialAcceptReviewService | None = None) -> FastAPI:
+    app = FastAPI(
+        title="Partial Accept Ops Reducer",
+        version="0.1.0",
+        description="Second-stage review service that auto-resolves low-risk partial accepts.",
     )
-    return _to_response(request, outcome)
+    app.state.review_service = review_service or _build_service()
 
+    @app.get("/health")
+    def health() -> dict[str, str]:
+        return {"status": "ok"}
 
-@app.post("/v1/partial-accepts/review-batch", response_model=BatchReviewResponse)
-def review_partial_accept_batch(request: BatchReviewRequest) -> BatchReviewResponse:
-    results = [
-        _to_response(
-            req,
-            _review_service.review(
-                bank_name=req.bank_name,
-                pan_name=req.pan_name,
-                model_score=req.model_score,
-            ),
+    @app.post("/v1/partial-accepts/review", response_model=ReviewResponse)
+    def review_partial_accept(request: ReviewRequest) -> ReviewResponse:
+        service: PartialAcceptReviewService = app.state.review_service
+        outcome = service.review(
+            bank_name=request.bank_name,
+            pan_name=request.pan_name,
+            model_score=request.model_score,
         )
-        for req in request.requests
-    ]
-    decision_counts = Counter(result.decision for result in results)
-    ticket_action_counts = Counter(result.ticket_action for result in results)
-    return BatchReviewResponse(
-        results=results,
-        decision_counts={decision: count for decision, count in decision_counts.items()},
-        ticket_action_counts={action: count for action, count in ticket_action_counts.items()},
-    )
+        return _to_response(request, outcome)
+
+    @app.post("/v1/partial-accepts/review-batch", response_model=BatchReviewResponse)
+    def review_partial_accept_batch(request: BatchReviewRequest) -> BatchReviewResponse:
+        service: PartialAcceptReviewService = app.state.review_service
+        results = [
+            _to_response(
+                req,
+                service.review(
+                    bank_name=req.bank_name,
+                    pan_name=req.pan_name,
+                    model_score=req.model_score,
+                ),
+            )
+            for req in request.requests
+        ]
+        decision_counts = Counter(result.decision for result in results)
+        ticket_action_counts = Counter(result.ticket_action for result in results)
+        return BatchReviewResponse(
+            results=results,
+            decision_counts={decision: count for decision, count in decision_counts.items()},
+            ticket_action_counts={action: count for action, count in ticket_action_counts.items()},
+        )
+
+    return app
+
+
+app = create_app()

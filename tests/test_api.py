@@ -1,18 +1,21 @@
 from fastapi.testclient import TestClient
+import pytest
 
-from partial_accepts_service.api import app
-
-
-client = TestClient(app)
+from partial_accepts_service.api import create_app
 
 
-def test_health() -> None:
+@pytest.fixture()
+def client() -> TestClient:
+    return TestClient(create_app())
+
+
+def test_health(client: TestClient) -> None:
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 
 
-def test_review_endpoint_returns_ticket_hint() -> None:
+def test_review_endpoint_returns_ticket_hint(client: TestClient) -> None:
     response = client.post(
         "/v1/partial-accepts/review",
         json={
@@ -32,7 +35,7 @@ def test_review_endpoint_returns_ticket_hint() -> None:
     assert "features" in body
 
 
-def test_batch_endpoint_counts_actions() -> None:
+def test_batch_endpoint_counts_actions(client: TestClient) -> None:
     response = client.post(
         "/v1/partial-accepts/review-batch",
         json={
