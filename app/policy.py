@@ -46,8 +46,16 @@ def triage_case(case: NameMatchCase, policy: TriagePolicy, include_features: boo
     surname_mismatch = "surname_mismatch" in features.risk_flags
     low_overlap = "low_token_overlap" in features.risk_flags
 
+    initials_safe_approve = (
+        features.subset_match
+        and features.surname_match
+        and features.initial_alignment >= 0.95
+        and features.token_overlap_shorter >= 1.0
+        and features.combined_score >= (policy.auto_approve_threshold - 0.02)
+    )
+
     approve_condition = (
-        features.combined_score >= policy.auto_approve_threshold
+        (features.combined_score >= policy.auto_approve_threshold or initials_safe_approve)
         and _approve_guardrail(case, surname_mismatch)
         and (
             case.model_score >= policy.high_model_score_threshold
