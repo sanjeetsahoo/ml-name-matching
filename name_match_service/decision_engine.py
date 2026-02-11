@@ -31,7 +31,12 @@ class PartialAcceptTriageEngine:
         self.config = config or DecisionConfig.from_env()
 
     def decide(self, bank_name: str, pan_name: str, ml_score: float | None = None) -> DecisionResult:
-        features = extract_name_features(bank_name=bank_name, pan_name=pan_name, ml_score=ml_score)
+        features = extract_name_features(
+            bank_name=bank_name,
+            pan_name=pan_name,
+            ml_score=ml_score,
+            ml_score_weight=self.config.ml_score_weight,
+        )
         reason_codes: list[str] = []
 
         if features.exact_match:

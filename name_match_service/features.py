@@ -78,7 +78,7 @@ def _soft_match(
 
 
 def extract_name_features(
-    bank_name: str, pan_name: str, ml_score: float | None
+    bank_name: str, pan_name: str, ml_score: float | None, ml_score_weight: float = 0.30
 ) -> NameFeatures:
     bank_normalized = normalize_name(bank_name)
     pan_normalized = normalize_name(pan_name)
@@ -97,7 +97,8 @@ def extract_name_features(
         (0.45 * token_set_score) + (0.35 * token_sort_score) + (0.20 * jaro_winkler_score)
     )
     ml_score_normalized = normalize_ml_score(ml_score)
-    blended_score = (0.70 * lexical_score) + (0.30 * ml_score_normalized)
+    weight = min(max(ml_score_weight, 0.0), 1.0)
+    blended_score = ((1.0 - weight) * lexical_score) + (weight * ml_score_normalized)
 
     unmatched_pan_tokens, unmatched_bank_tokens, matched_count = _soft_match(
         pan_tokens, bank_tokens
