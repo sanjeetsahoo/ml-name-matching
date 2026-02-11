@@ -73,8 +73,8 @@ class DecisionEngine:
         if (
             features.surname_match
             and features.initials_match
-            and features.pan_coverage >= 0.75
             and case.ml_score >= 0.58
+            and features.sequence_score >= 0.70
         ):
             reasons.append("initial-based abbreviation is consistent with PAN name")
             return self._result(case, Decision.AUTO_ACCEPT, max(0.88, composite_score), reasons, features)

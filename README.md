@@ -36,6 +36,7 @@ src/partial_accept_service/
 tests/
   test_engine.py
   test_api.py
+run_service.py         # convenient local runner
 ```
 
 ---
@@ -43,7 +44,7 @@ tests/
 ## Run the service
 
 ```bash
-python -m partial_accept_service
+python3 run_service.py
 ```
 
 Defaults:
@@ -63,7 +64,7 @@ Optional environment variables:
 Example:
 
 ```bash
-SERVICE_PORT=9090 AUTO_ACCEPT_THRESHOLD=0.84 python -m partial_accept_service
+SERVICE_PORT=9090 AUTO_ACCEPT_THRESHOLD=0.84 python3 run_service.py
 ```
 
 ---

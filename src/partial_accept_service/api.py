@@ -47,8 +47,6 @@ def build_handler(decision_engine: DecisionEngine) -> type[_BaseJsonHandler]:
     """Build a request handler bound to one engine instance."""
 
     class PartialAcceptHandler(_BaseJsonHandler):
-        decision_engine = decision_engine
-
         def do_GET(self) -> None:  # noqa: N802 (http method naming)
             path = urlparse(self.path).path
             if path == "/health":
@@ -126,6 +124,7 @@ def build_handler(decision_engine: DecisionEngine) -> type[_BaseJsonHandler]:
                 },
             )
 
+    PartialAcceptHandler.decision_engine = decision_engine
     return PartialAcceptHandler
 
 
